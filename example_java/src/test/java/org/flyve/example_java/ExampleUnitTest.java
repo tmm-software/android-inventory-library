@@ -2,7 +2,7 @@
  *  LICENSE
  *
  *  This file is part of Flyve MDM Inventory Library for Android.
- * 
+ *
  *  Inventory Library for Android is a subproject of Flyve MDM.
  *  Flyve MDM is a mobile device management software.
  *
