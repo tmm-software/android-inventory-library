@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"org.flyve.inventory"},{"l":"org.flyve.inventory.categories"},{"l":"org.flyve.inventory.usbManager"}]
