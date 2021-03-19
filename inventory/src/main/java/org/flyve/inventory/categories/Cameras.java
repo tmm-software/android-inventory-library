@@ -110,6 +110,7 @@ public class Cameras
                 for (int index = 0; index < count; index++) {
                     Category c = new Category("CAMERAS", "cameras");
                     CameraCharacteristics chars = getCharacteristics(xCtx, index);
+                    c.put("DESIGNATION", new CategoryValue(Integer.toString(index), "DESIGNATION", "designation"));
                     if (chars != null) {
                         c.put("RESOLUTION", new CategoryValue(getResolution(chars, index), "RESOLUTION", "resolution"));
                         c.put("LENSFACING", new CategoryValue(getFacingState(chars), "LENSFACING", "lensfacing"));
@@ -119,9 +120,9 @@ public class Cameras
                         c.put("FOCALLENGTH", new CategoryValue(getFocalLength(chars), "FOCALLENGTH", "focallength"));
                         c.put("SENSORSIZE", new CategoryValue(getSensorSize(chars), "SENSORSIZE", "sensorsize"));
                     }
-                    if (!"".equals(cameraVendors)) {
+                    //if (!"".equals(cameraVendors)) {
                         c.put("MANUFACTURER", new CategoryValue(getManufacturer(index), "MANUFACTURER", "manufacturer"));
-                    }
+                    //}
                     c.put("RESOLUTIONVIDEO", new CategoryValue(getVideoResolution(index), "RESOLUTIONVIDEO", "resolutionvideo"));
                     c.put("SUPPORTS", new CategoryValue("N/A", "SUPPORTS", "supports"));
                     c.put("MODEL", new CategoryValue(getModel(index), "MODEL", "model"));
