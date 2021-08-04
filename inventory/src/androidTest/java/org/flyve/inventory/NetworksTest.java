@@ -125,4 +125,9 @@ public class NetworksTest {
         assertNotEquals("", networks.getSubnetIpV6());
     }
 
+    @Test
+    public void getDriver() {
+        Networks networkds = new Networks(appContext);
+        assertNotEquals("", networkds.getDriver());
+    }
 }

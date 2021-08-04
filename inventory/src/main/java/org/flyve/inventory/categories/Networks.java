@@ -33,8 +33,10 @@ import android.net.DhcpInfo;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.RouteInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 
 import org.flyve.inventory.CommonErrorType;
 import org.flyve.inventory.InventoryLog;
@@ -133,7 +135,7 @@ public class Networks extends Categories {
 			InventoryLog.d("leaseDuration=" + dhcp.leaseDuration);
 
 			c.put("DESCRIPTION", new CategoryValue(getDescription(), "DESCRIPTION", "description", true, false));
-			c.put("DRIVER", new CategoryValue(TYPE, "DRIVER", "driver", true, false));
+			c.put("DRIVER", new CategoryValue(this.getDriver(), "DRIVER", "driver", true, false));
 			c.put("IPADDRESS", new CategoryValue(getIpAddress(), "IPADDRESS", "ipAddress", true, false));
 			c.put("IPADDRESS6", new CategoryValue(getAddressIpV6(), "IPADDRESS6", "ipaddress6", true, false));
 			c.put("IPDHCP", new CategoryValue(getIpDhCp(), "IPDHCP", "ipDhcp", true, false));
@@ -159,6 +161,22 @@ public class Networks extends Categories {
 		}
 	}
 
+	public String getDriver() {
+		String value = "N/A";
+		try {
+			ConnectivityManager cMa = (ConnectivityManager) context.getApplicationContext().getSystemService(Service.CONNECTIVITY_SERVICE);
+			if (cMa.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI) {
+				value = "WIFI";
+			} else if (cMa.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_ETHERNET) {
+				value = "ETHERNET";
+			}
+			return value;
+		} catch (Exception ex) {
+			InventoryLog.e(InventoryLog.getMessage(context, CommonErrorType.NETWORKS_DESCRIPTION, ex.getMessage()));
+		}
+		return value;
+	}
+
 	/**
 	 * Get the Media Access Control address
 	 * @return string the MAC address
@@ -166,14 +184,18 @@ public class Networks extends Categories {
 	public String getMacAddress() {
 		String macAddress = "N/A";
 		try {
-			macAddress = wifi.getMacAddress();
-
-			// if get default mac address
-			if (macAddress == null || macAddress.contains("02:00:00:00:00:00")) {
-				macAddress = getMACAddress("wlan0");
-				if (macAddress.isEmpty()) {
-					macAddress = getMACAddress("eth0");
+			ConnectivityManager cMa = (ConnectivityManager) context.getApplicationContext().getSystemService(Service.CONNECTIVITY_SERVICE);
+			if (cMa.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI) {
+				macAddress = wifi.getMacAddress();
+			} else if (cMa.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_ETHERNET) {
+				String name ="";
+				String ipadressString = Utils.getIPAddress(true);
+				InetAddress address = InetAddress.getByName(ipadressString);
+				NetworkInterface netInterface = NetworkInterface.getByInetAddress(address);
+				if (netInterface != null ) {
+					name = netInterface.getDisplayName();
 				}
+				macAddress = getMACAddress(name);
 			}
 		} catch (Exception ex) {
 			InventoryLog.e(InventoryLog.getMessage(context, CommonErrorType.NETWORKS_MAC_ADDRESS, ex.getMessage()));
@@ -266,9 +288,16 @@ public class Networks extends Categories {
 	 */
 	public String getIpAddress() {
 		String value = "N/A";
+		ConnectivityManager cMa = (ConnectivityManager) context.getApplicationContext().getSystemService(Service.CONNECTIVITY_SERVICE);
 		try {
-			value = StringUtils.intToIp(dhcp.ipAddress);
-		} catch (Exception ex) {
+			if (cMa.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI) {
+				value = StringUtils.intToIp(dhcp.ipAddress);
+				return value;
+			} else if (cMa.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_ETHERNET) {
+				value = Utils.getIPAddress(true);
+				return value;
+			}
+		} catch (Exception ex){
 			InventoryLog.e(InventoryLog.getMessage(context, CommonErrorType.NETWORKS_IP_ADDRESS, ex.getMessage()));
 		}
 		return value;
@@ -294,8 +323,19 @@ public class Networks extends Categories {
 	 */
 	public String getIpDhCp() {
 		String value = "N/A";
+		ConnectivityManager cMa = (ConnectivityManager) context.getApplicationContext().getSystemService(Service.CONNECTIVITY_SERVICE);
 		try {
-			value = StringUtils.intToIp(dhcp.serverAddress);
+			if(cMa.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_WIFI) {
+				value = StringUtils.intToIp(dhcp.serverAddress);
+			} else if (cMa.getActiveNetworkInfo().getType() == ConnectivityManager.TYPE_ETHERNET && Build.VERSION.SDK_INT > Build.VERSION_CODES.M){
+				List<RouteInfo> ListRoute = cMa.getLinkProperties(cMa.getActiveNetwork()).getRoutes();
+				for(RouteInfo Route : ListRoute){
+					if(Route.isDefaultRoute()){
+						value = String.valueOf(Route.getGateway()).replace("/","");
+					}
+				}
+			}
+
 		} catch (Exception ex) {
 			InventoryLog.e(InventoryLog.getMessage(context, CommonErrorType.NETWORKS_IP_DH_CP, ex.getMessage()));
 		}
